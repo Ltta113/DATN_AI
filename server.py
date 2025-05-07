@@ -302,9 +302,9 @@ class BookRecommendationAPI:
 if __name__ == "__main__":
     
     api_server = BookRecommendationAPI(
-        host='by86u4pgwcxrawnoe6as-mysql.services.clever-cloud.com',
-        user='uloh5j4h9cfuitow',
-        password='FV5IM2MWOMHGlAsFKzba',
-        database='by86u4pgwcxrawnoe6as'
+        host='localhost',
+        user='root',
+        password='01012003',
+        database='bookstore'
     )
     api_server.run(host='0.0.0.0', port=5000, debug=True)

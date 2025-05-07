@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 
 try:
     stopwords.words('english')
-except:
+except LookupError:
     nltk.download('stopwords')
 
 class BookRecommendationSystem:
@@ -91,14 +91,14 @@ class BookRecommendationSystem:
         if all(df is not None for df in [self.books_df, self.authors_df, self.categories_df, 
                                         self.book_authors_df, self.book_categories_df]):
             
-            books_authors = pd.merge(self.book_authors_df, self.authors_df, left_on='author_id', right_on='id')
+            books_authors = pd.merge(self.book_authors_df, self.authors_df, left_on='author_id', right_on='id', how='inner', validate='m:1')
             books_authors_grouped = books_authors.groupby('book_id')['name'].apply(lambda x: ' '.join(x)).reset_index()
-            self.books_df = pd.merge(self.books_df, books_authors_grouped, left_on='id', right_on='book_id', how='left')
+            self.books_df = pd.merge(self.books_df, books_authors_grouped, left_on='id', right_on='book_id', how='left', validate='1:1')
             self.books_df.rename(columns={'name': 'authors'}, inplace=True)
             
-            books_categories = pd.merge(self.book_categories_df, self.categories_df, left_on='category_id', right_on='id')
+            books_categories = pd.merge(self.book_categories_df, self.categories_df, left_on='category_id', right_on='id', how='inner', validate='m:1')
             books_categories_grouped = books_categories.groupby('book_id')['name'].apply(lambda x: ' '.join(x)).reset_index()
-            self.books_df = pd.merge(self.books_df, books_categories_grouped, left_on='id', right_on='book_id', how='left')
+            self.books_df = pd.merge(self.books_df, books_categories_grouped, left_on='id', right_on='book_id', how='left', validate='1:1')
             self.books_df.rename(columns={'name': 'categories'}, inplace=True)
             
             self.books_df = pd.merge(self.books_df, self.publishers_df[['id', 'name']], left_on='publisher_id', right_on='id', how='left')
@@ -119,17 +119,25 @@ class BookRecommendationSystem:
     
     def _clean_text(self, text):
         text = str(text).lower()
-        
+
         text = re.sub(r'[^\w\s]', '', text)
-        
         text = re.sub(r'\d+', '', text)
-        
-        stop_words = set(stopwords.words('english'))
+
+        eng_stopwords = set(stopwords.words('english'))
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        vn_stopwords_path = os.path.join(current_dir, 'vietnamese.txt')
+
+        with open(vn_stopwords_path, 'r', encoding='utf-8') as f:
+            vn_stopwords = set(line.strip() for line in f if line.strip())
+
+        stop_words = eng_stopwords.union(vn_stopwords)
+
         text = ' '.join([word for word in text.split() if word not in stop_words])
-        
+
         ps = PorterStemmer()
         text = ' '.join([ps.stem(word) for word in text.split()])
-        
+
         return text
     
     def build_content_based_model(self):
@@ -294,9 +302,9 @@ class BookRecommendationAPI:
 if __name__ == "__main__":
     
     api_server = BookRecommendationAPI(
-        host='localhost',
-        user='root',
-        password='01012003',
-        database='bookstore'
+        host='by86u4pgwcxrawnoe6as-mysql.services.clever-cloud.com',
+        user='uloh5j4h9cfuitow',
+        password='FV5IM2MWOMHGlAsFKzba',
+        database='by86u4pgwcxrawnoe6as'
     )
     api_server.run(host='0.0.0.0', port=5000, debug=True)
